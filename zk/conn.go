@@ -307,15 +307,13 @@ func (c *Conn) loop() {
 			c.logger.Printf("Authentication failed: %s", err)
 			c.conn.Close()
 		case err == nil:
-			c.logger.Printf("Authenticated: id=%d, timeout=%d", c.sessionID, c.sessionTimeoutMs)
 			c.hostProvider.Connected()       // mark success
 			closeChan := make(chan struct{}) // channel to tell send loop stop
 			var wg sync.WaitGroup
 
 			wg.Add(1)
 			go func() {
-				err := c.sendLoop(c.conn, closeChan)
-				c.logger.Printf("Send loop terminated: err=%v", err)
+				c.sendLoop(c.conn, closeChan)
 				c.conn.Close() // causes recv loop to EOF/exit
 				wg.Done()
 			}()
@@ -323,7 +321,6 @@ func (c *Conn) loop() {
 			wg.Add(1)
 			go func() {
 				err := c.recvLoop(c.conn)
-				c.logger.Printf("Recv loop terminated: err=%v", err)
 				if err == nil {
 					panic("zk: recvLoop should never return nil error")
 				}
